@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Yiwu</string>
+    <string name="button_get">OkHttpGet</string>
+    <string name="button_post">POST</string>
+    <string name="button_md5">MD5</string>
+    <string name="title_activity_aaa">aaaActivity</string>
+</resources>
