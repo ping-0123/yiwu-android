@@ -9,6 +9,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.yinzhiwu.net.okhttp.exception.OkHttpException;
 import com.yinzhiwu.net.okhttp.listener.DisposeDataHandle;
 import com.yinzhiwu.net.okhttp.listener.DisposeDataListener;
@@ -41,7 +42,7 @@ public class CommonJsonCallback implements Callback {
 														// set-cookie2
 
 	/**
-	 * Yiwu Json Formate;
+	 * Yiwu Json Format;
 	 */
 	protected final String RETURN_CODE_INT 		 = "returnCode";
 	protected final String RETURN_SECURE_BOOL	 = "secure";
@@ -54,6 +55,7 @@ public class CommonJsonCallback implements Callback {
 	 */
 	protected final int NETWORK_ERROR = -1; // the network relative error
 	protected final int JSON_ERROR = -2; // the JSON relative error
+    protected final int REQUEST_ERROR=-4; // 请求失败
 	protected final int OTHER_ERROR = -3; // the unknow error
 
 	/**
@@ -63,12 +65,14 @@ public class CommonJsonCallback implements Callback {
 	private DisposeDataListener mListener;
 	private Class<?> mClass;
 	private Gson mGson;
+    private JsonParser mParser;
 
 	public CommonJsonCallback(DisposeDataHandle handle) {
 		this.mListener = handle.mListener;
 		this.mClass = handle.mClass;
 		this.mDeliveryHandler = new Handler(Looper.getMainLooper());
 		this.mGson = new GsonBuilder().create();
+        this.mParser = new JsonParser();
 	}
 
 	@Override
@@ -119,19 +123,23 @@ public class CommonJsonCallback implements Callback {
 		}
 
 		try {
-			JsonObject result =(JsonObject) mGson.toJsonTree(responseObj.toString());
-			if (result.has(RETURN_CODE_INT)) {
-				if (result.get(RETURN_CODE_INT).getAsInt() == 200) {
+            JsonObject result = mParser.parse(responseObj.toString()).getAsJsonObject();
+            if (result.has(RETURN_RESULT_BOOL)) {
+				if (result.get(RETURN_RESULT_BOOL).getAsBoolean()) {
 					if (mClass == null) {
 						mListener.onSuccess(result);
 					} else {
-						JsonElement data = result.get("RETURN_DATA_JSON");
+						JsonElement data = result.get(RETURN_DATA_JSON);
 						if (data instanceof JsonNull) {
 							mListener.onFailure(new OkHttpException(JSON_ERROR,
 									result.get(RETURN_MESSAGE_STR).getAsString()));
 						} else if (data instanceof JsonArray) {
-							List<?> list = mGson.fromJson(data)
-							mListener.onSuccess(mGson);
+                            JsonArray dataArr = (JsonArray) data;
+                            List list = new ArrayList<>();
+                            for(int i=0; i<dataArr.size(); i++){
+                                list.add(mGson.fromJson(dataArr.get(i), mClass));
+                            }
+                            mListener.onSuccess(list);
 						} else {
 							Object obj = mGson.fromJson(data, mClass);
 							if (obj != null) {
@@ -142,18 +150,13 @@ public class CommonJsonCallback implements Callback {
 						}
 					}
 				} else {
-					if (result.has(ERROR_MSG)) {
 						mListener.onFailure(
-								new OkHttpException(result.optInt(RESULT_CODE), result.optString(ERROR_MSG)));
-					} else {
-						mListener.onFailure(new OkHttpException(result.optInt(RESULT_CODE), EMPTY_MSG));
-					}
+								new OkHttpException(OTHER_ERROR,
+										result.get(RETURN_MESSAGE_STR).getAsString()));
 				}
 			} else {
-				if (result.has(ERROR_MSG)) {
-					mListener.onFailure(new OkHttpException(OTHER_ERROR, result.optString(ERROR_MSG)));
-				}
-			}
+                mListener.onFailure(new OkHttpException(REQUEST_ERROR, "请求失败"));
+            }
 		} catch (Exception e) {
 			mListener.onFailure(new OkHttpException(OTHER_ERROR, e.getMessage()));
 			e.printStackTrace();

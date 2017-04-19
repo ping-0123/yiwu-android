@@ -49,7 +49,7 @@ public class CommonOkHttpClient
 		/**
 		 * trust all the https point
 		 */
-		okHttpClientBuilder.sslSocketFactory(HttpsUtils.getSslSocketFactory());
+//		okHttpClientBuilder.sslSocketFactory(HttpsUtils.getSslSocketFactory());
 		mOkHttpClient = okHttpClientBuilder.build();
 	}
 

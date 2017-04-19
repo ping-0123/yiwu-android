@@ -1,97 +1,90 @@
 package com.yinzhiwu.yiwu;
 
-import android.database.DataSetObserver;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
+import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Spinner;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import com.yinzhiwu.yiwu.view.Employee;
+import com.yinzhiwu.net.okhttp.CommonOkHttpClient;
+import com.yinzhiwu.net.okhttp.listener.DisposeDataHandle;
+import com.yinzhiwu.net.okhttp.listener.DisposeDataListener;
+import com.yinzhiwu.sys.YiwuApplication;
+import com.yinzhiwu.yiwu.view.Store;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.Response;
 
 public class ArrangePrivateLessonActivity extends AppCompatActivity {
     private static final String TAG = "ArrangePrivateLessonAct";
 
-    private OkHttpClient client = new OkHttpClient();
+    private  YiwuApplication application;
 
-    private Gson gson = new Gson();
 
-    private Spinner spinnerCoach;
+    private Spinner mStoreSpinner;
+    private ArrayAdapter<Store> mStoreAdapter;
+    private List mStores = new ArrayList<>();
 
-    private ArrayAdapter adapter;
+    private EditText mDateEditText;
+    private Button  mDateButton;
 
-    private List<Employee> mCoaches = new ArrayList<>();
+    private EditText mStartTimeEditText;
+    private Button mStartTimeButton;
 
-    private String[] strings = new String[]{"张三", "李四", "王五", "赵六", "钱七", "孙八"};
+    private EditText mEndTimeEditText;
+    private Button  mEndTimeButton;
 
-    private Handler handler = new Handler();
-
+    private EditText mMemberEditText;
+    private Button  mMemberButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_arrange_private_lesson);
-        spinnerCoach = (Spinner) findViewById(R.id.spinner_coach);
-        setCoaches();
+        application = (YiwuApplication) getApplication();
+        mStoreSpinner = (Spinner) findViewById(R.id.spinner_store);
 
-         adapter = new ArrayAdapter<Employee>(this, android.R.layout.simple_spinner_item, mCoaches);
-        adapter.registerDataSetObserver(new DataSetObserver() {
-            @Override
-            public void onChanged() {
-                Log.d(TAG, "onChanged() called");
-            }
-        });
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mStoreAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,mStores);
+        mStoreAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mStoreSpinner.setAdapter(mStoreAdapter);
+        mDateEditText = (EditText) findViewById(R.id.edit_date);
+        mDateButton = (Button) findViewById(R.id.button_date);
+        mMemberEditText = (EditText) findViewById(R.id.edit_member);
+        mMemberButton = (Button) findViewById(R.id.button_member);
 
-        ArrayAdapter<String> adapter2 = new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item,strings);
-        adapter2.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerCoach.setAdapter(adapter);
 
+        setStoreList();
     }
 
-    private  void setCoaches(){
-        String url = "http://192.168.0.115:8080/yiwu/api/employee/getAllCoaches";
-        Request.Builder builder = new Request.Builder();
-        Request request = builder.get().url(url).build();
-        doRequest(request);
 
+    public void searchMember(View view) {
     }
 
-    private  void doRequest(Request request) {
-        Call call = client.newCall(request);
-        call.enqueue(new Callback() {
+    public void selectDate(View view) {
+    }
+
+    public void selectTime(View view) {
+    }
+
+
+    private void setStoreList(){
+        String url = application.getBaseApiUrl() + "api/store/getAllApiStores";
+        CommonOkHttpClient.get(new Request.Builder().url(url).get().build(), new DisposeDataHandle(new DisposeDataListener() {
             @Override
-            public void onFailure(Call call, IOException e) {
-                Log.d(TAG, "onFailure() called with: call = [" + call + "], e = [" + e + "]");
+            public void onSuccess(Object responseObj) {
+                mStores.clear();
+                mStores.addAll((List<Store>)responseObj);
+                mStoreAdapter.notifyDataSetChanged();
             }
 
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                Log.d(TAG, "onResponse() called with: call = [" + call + "], response = [" + response + "]");
-                final String s  = response.body().string();
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mCoaches = gson.fromJson(s,new TypeToken<List<Employee>>(){}.getType());
-                        adapter.addAll(mCoaches);
-                    }
-                });
-
+            public void onFailure(Object reasonObj) {
 
             }
-        });
+        }, Store.class));
     }
 }

@@ -25,6 +25,11 @@ public class OkHttpException extends Exception {
 		this.emsg = emsg;
 	}
 
+	public OkHttpException(int ecode, String message){
+		super(message);
+		this.ecode = ecode;
+	}
+
 	public int getEcode() {
 		return ecode;
 	}

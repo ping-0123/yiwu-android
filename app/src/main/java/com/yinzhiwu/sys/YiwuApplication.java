@@ -12,7 +12,7 @@ public class YiwuApplication extends Application {
 
     private Employee employee;
 
-    private String baseApiUrl = "http://192.168.0.115:8080/yiwu";
+    private String baseApiUrl = "http://192.168.0.115:8080/yiwu/";
 
 
 
